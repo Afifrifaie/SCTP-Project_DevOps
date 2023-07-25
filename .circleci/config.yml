@@ -10,6 +10,16 @@ jobs:
       # Package into a jar
       - run: mvn clean package
 
+      # Install Snyk CLI
+      - run:
+          name: Install Snyk CLI
+          command: npm install -g snyk
+
+      # Run Snyk scan
+      - run:
+          name: Snyk Scan
+          command: snyk test --all-projects --org=Afifrifaie --severity-threshold=medium
+
       # configure CircleCI to use Docker
       - setup_remote_docker
 
