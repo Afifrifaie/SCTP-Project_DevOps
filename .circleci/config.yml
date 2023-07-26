@@ -1,6 +1,43 @@
 version: 2.1
+workflows:
+  version: 2
+  ci_cd_workflow:
+    jobs:
+      # Define jobs to be executed for CI (develop branch)
+      - build:
+          filters:
+            branches:
+              only:
+                - develop
+      # Define jobs to be executed for CI/CD (release branch)
+      - build_and_deploy:
+          filters:
+            branches:
+              only:
+                - release
+
 jobs:
   build:
+    docker:
+      - image: cimg/openjdk:17.0.7
+    steps:
+      # Fetch source code from repo
+      - checkout
+
+      # Package into a jar
+      - run: mvn clean package
+
+      # Install Snyk CLI
+      - run:
+          name: Install Snyk CLI
+          command: npm install -g snyk
+
+      # Run Snyk scan
+      - run:
+          name: Snyk Scan
+          command: snyk test --all-projects --org=Afifrifaie --severity-threshold=medium
+
+  build_and_deploy:
     docker:
       - image: cimg/openjdk:17.0.7
     steps:
