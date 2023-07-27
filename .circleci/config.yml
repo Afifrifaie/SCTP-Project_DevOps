@@ -78,9 +78,9 @@ workflows:
           filters:
             branches:
               only: release
-      - deploy_to_heroku:
-          requires:
-            - docker_build_and_push
+      # - deploy_to_heroku:
+      #     requires:
+      #       - docker_build_and_push
           filters:
             branches:
               only: release
