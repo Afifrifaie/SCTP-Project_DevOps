@@ -22,9 +22,9 @@ jobs:
       - run: mvn clean package
       - setup_remote_docker
       - docker/check
-      - run: docker build -t $IMAGE_NAME .
+      - run: docker build -t harbour-booking-api .
       - snyk/scan:
-        docker-image-name: $IMAGE_NAME
+          docker-image-name: harbour-booking-api
 
   docker_build_and_push:
     docker:
