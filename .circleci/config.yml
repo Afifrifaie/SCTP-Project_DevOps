@@ -1,20 +1,7 @@
 version: 2.1
-workflows:
-  version: 2
-  ci_cd_workflow:
-    jobs:
-      # Define jobs to be executed for CI (develop branch)
-      - build:
-          filters:
-            branches:
-              only:
-                - develop
-      # Define jobs to be executed for CI/CD (release branch)
-      - build_and_deploy:
-          filters:
-            branches:
-              only:
-                - release
+orbs:
+  docker:circleci/docker@2.2.0
+  snyk: snyk/snyk@1.70
 
 jobs:
   build:
@@ -26,18 +13,26 @@ jobs:
 
       # Package into a jar
       - run: mvn clean package
+     - run: |
+          echo “Running tests...”
+          mvn test
+#Job to perform snyk scan
+snyk_scan:
+  docker:
+  - image: cimg/openjdk:17.0.7
+  enviroment:
+    IMAGE_NAME: afifrifaie/habour-booking-api
+    steps:
+    - checkout
+    - run: mvn clean package
+    - setup_remote_docker
+    - docker/check
+    - run: docker build -t $IMAGE_NAME .
+    - snyk/scan:
+      docker-image-name: $IMAGE_NAME
 
-      # Install Snyk CLI
-      - run:
-          name: Install Snyk CLI
-          command: npm install -g snyk
-
-      # Run Snyk scan
-      - run:
-          name: Snyk Scan
-          command: snyk test --all-projects --org=Afifrifaie --severity-threshold=medium
-
-  build_and_deploy:
+#Job to build Docker image and push to DockerHub
+  docker_build_and_deploy:
     docker:
       - image: cimg/openjdk:17.0.7
     steps:
@@ -47,15 +42,6 @@ jobs:
       # Package into a jar
       - run: mvn clean package
 
-      # Install Snyk CLI
-      - run:
-          name: Install Snyk CLI
-          command: npm install -g snyk
-
-      # Run Snyk scan
-      - run:
-          name: Snyk Scan
-          command: snyk test --all-projects --org=Afifrifaie --severity-threshold=medium
 
       # configure CircleCI to use Docker
       - setup_remote_docker
@@ -69,3 +55,28 @@ jobs:
             && docker build -t ${DOCKER_USER}/harbour-booking-api:latest . \
             && docker push ${DOCKER_USER}/harbour-booking-api:${CIRCLE_SHA1} \
             && docker push ${DOCKER_USER}/harbour-booking-api:latest
+
+            workflows:
+  version: 2
+  ci_flow:
+    jobs:
+      # Define jobs to be executed for CI (develop branch)
+      - build_and_test:
+          filters:
+            branches:
+              only:
+                - develop
+      - snyk_scan:
+        requires:
+        - build_and_test
+        filters:
+          branches:
+            only: develop
+      # Define jobs to be executed for CI/CD (release branch)
+      cicd_flow:
+      jobs:
+      - docker_build_and_deploy:
+          filters:
+            branches:
+              only:
+                - release
