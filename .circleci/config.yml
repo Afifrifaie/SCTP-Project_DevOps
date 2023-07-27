@@ -36,10 +36,9 @@ jobs:
       - run:
           name: Build and Push Docker Image
           command: |
-            echo "Logging into Docker Hub..."
-            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-            docker build -t ${DOCKER_USER}/harbour-booking-api:${CIRCLE_SHA1} .
-            docker push ${DOCKER_USER}/harbour-booking-api:${CIRCLE_SHA1}
+            docker login -u ${DOCKER_LOGIN} -p ${DOCKER_PASSWORD}
+            docker build -t ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1} .
+            docker push ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
 
   # deploy_to_heroku:
   #   docker:
