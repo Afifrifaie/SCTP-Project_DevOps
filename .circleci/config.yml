@@ -36,9 +36,11 @@ jobs:
       - run:
           name: Build and Push Docker Image
           command: |
+            # Define the image name and tag
+            export IMAGE_NAME=${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
             docker login -u ${DOCKER_LOGIN} -p ${DOCKER_PASSWORD}
-            docker build -t ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1} .
-            docker push ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
+            docker build -t ${IMAGE_NAME} .
+            docker push ${IMAGE_NAME}
 
   # deploy_to_heroku:
   #   docker:
