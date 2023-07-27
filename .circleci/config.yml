@@ -29,6 +29,9 @@ jobs:
   docker_build_and_push:
     docker:
       - image: cimg/openjdk:17.0.7
+    environment:
+      # Set IMAGE_NAME as an environment variable
+      IMAGE_NAME: ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
     steps:
       - checkout
       - run: mvn clean package
@@ -36,11 +39,9 @@ jobs:
       - run:
           name: Build and Push Docker Image
           command: |
-            # Define the image name and tag
-            export IMAGE_NAME=${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
             docker login -u ${DOCKER_LOGIN} -p ${DOCKER_PASSWORD}
-            docker build -t ${IMAGE_NAME} .
-            docker push ${IMAGE_NAME}
+            docker build -t $IMAGE_NAME .
+            docker push $IMAGE_NAME
 
   # deploy_to_heroku:
   #   docker:
