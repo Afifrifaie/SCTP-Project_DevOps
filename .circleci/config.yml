@@ -1,48 +1,86 @@
 version: 2.1
 orbs:
   docker: circleci/docker@2.2.0
-  snyk: snyk/snyk@1.70
 
 jobs:
-  build:
+  build_and_test:
     docker:
       - image: cimg/openjdk:17.0.7
     steps:
-      # Fetch source code from repo
       - checkout
-
-      # Package into a jar
       - run: mvn clean package
-
-      # Run tests
       - run: |
           echo "Running tests..."
           mvn test
 
+  snyk_scan:
+    docker:
+      - image: cimg/openjdk:17.0.7
+    steps:
+      - checkout
+      - run: mvn clean package
+      - setup_remote_docker
+      - docker/check
+      - run: docker build -t $IMAGE_NAME .
+      - run:
+          name: Snyk Scan
+          command: snyk test --all-projects --org=Afifrifaie --severity-threshold=medium
+
+  docker_build_and_push:
+    docker:
+      - image: cimg/openjdk:17.0.7
+    steps:
+      - checkout
+      - run: mvn clean package
+      - setup_remote_docker
+      - run:
+          name: Build and Push Docker Image
+          command: |
+            docker login -u ${DOCKER_LOGIN} -p ${DOCKER_PASSWORD}
+            docker build -t ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1} .
+            docker push ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
+
+  # deploy_to_heroku:
+  #   docker:
+  #     - image: cimg/openjdk:17.0.7
+  #   steps:
+  #     - checkout
+  #     - run: mvn clean package
+  #     - setup_remote_docker
+  #     - run: |
+  #         echo "Setting up Heroku..."
+  #         curl https://cli-assets.heroku.com/install.sh | sh
+  #     - run:
+  #         name: Heroku Container Push
+  #         command: |
+  #           heroku container:login
+  #           heroku container:push web -a harbour-booking-api
+  #           heroku container:release web -a harbour-booking-api
+
 workflows:
   version: 2
-  ci_cd_workflow:
+  ci_flow:
     jobs:
-      # Define jobs to be executed for CI (develop branch)
-      - build:
+      - build_and_test:
           filters:
             branches:
-              only:
-                - develop
-
-      # Define jobs to be executed for CI/CD (release branch)
+              only: develop
       - snyk_scan:
           requires:
-            - build
+            - build_and_test
           filters:
             branches:
-              only:
-                - develop
+              only: develop
 
-      - docker_build_and_deploy:
-          requires:
-            - snyk_scan
+  ci_cd_flow:
+    jobs:
+      - docker_build_and_push:
           filters:
             branches:
-              only:
-                - release
+              only: release
+      - deploy_to_heroku:
+          requires:
+            - docker_build_and_push
+          filters:
+            branches:
+              only: release
