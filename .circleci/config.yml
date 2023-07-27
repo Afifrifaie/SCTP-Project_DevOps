@@ -36,7 +36,8 @@ jobs:
       - run:
           name: Build and Push Docker Image
           command: |
-            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                 echo "Logging into Docker Hub..."
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
             docker build -t ${DOCKER_USER}/harbour-booking-api:${CIRCLE_SHA1} .
             docker push ${DOCKER_USER}/harbour-booking-api:${CIRCLE_SHA1}
 
