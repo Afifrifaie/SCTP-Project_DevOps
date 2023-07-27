@@ -21,7 +21,7 @@ jobs:
       - run: mvn clean package
       - setup_remote_docker
       - docker/check
-      - run: docker build -t $IMAGE_NAME .
+      - run: docker build -t ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1} .
       - run:
           name: Snyk Scan
           command: snyk test --all-projects --org=Afifrifaie --severity-threshold=medium
@@ -29,9 +29,6 @@ jobs:
   docker_build_and_push:
     docker:
       - image: cimg/openjdk:17.0.7
-    environment:
-      # Set IMAGE_NAME as an environment variable
-      IMAGE_NAME: ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
     steps:
       - checkout
       - run: mvn clean package
@@ -40,25 +37,8 @@ jobs:
           name: Build and Push Docker Image
           command: |
             docker login -u ${DOCKER_LOGIN} -p ${DOCKER_PASSWORD}
-            docker build -t $IMAGE_NAME .
-            docker push $IMAGE_NAME
-
-  # deploy_to_heroku:
-  #   docker:
-  #     - image: cimg/openjdk:17.0.7
-  #   steps:
-  #     - checkout
-  #     - run: mvn clean package
-  #     - setup_remote_docker
-  #     - run: |
-  #         echo "Setting up Heroku..."
-  #         curl https://cli-assets.heroku.com/install.sh | sh
-  #     - run:
-  #         name: Heroku Container Push
-  #         command: |
-  #           heroku container:login
-  #           heroku container:push web -a harbour-booking-api
-  #           heroku container:release web -a harbour-booking-api
+            docker build -t ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1} .
+            docker push ${DOCKER_LOGIN}/harbour-booking-api:${CIRCLE_SHA1}
 
 workflows:
   version: 2
@@ -81,9 +61,3 @@ workflows:
           filters:
             branches:
               only: release
-      # - deploy_to_heroku:
-      #     requires:
-      #       - docker_build_and_push
-      #     filters:
-      #       branches:
-      #         only: release
